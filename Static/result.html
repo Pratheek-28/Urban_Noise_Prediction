@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Analysis Result</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #4bb543;
+            --error: #ff3333;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            margin: 20px 0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .result-card {
+            display: flex;
+            align-items: center;
+            background: rgba(67, 97, 238, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .category-icon {
+            font-size: 3.5rem;
+            margin-right: 20px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .category-info {
+            flex: 1;
+        }
+        
+        .category-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 5px;
+        }
+        
+        .category-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .waveform-container {
+            width: 100%;
+            height: 150px;
+            margin: 30px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+        
+        .control-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+        
+        .control-btn:disabled {
+            background: #e9ecef;
+            color: #adb5bd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-container {
+            width: 100%;
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-outline {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        footer {
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: var(--gray);
+            text-align: center;
+        }
+        
+        /* Loading animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+            }
+            
+            .result-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .category-icon {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sound Analysis Result</h1>
+        </div>
+        
+        <div class="result-card">
+            <div class="category-icon">
+                {% if prediction in ['dog', 'cat', 'cow', 'pig', 'sheep', 'frog'] %}
+                    🐾
+                {% elif prediction in ['rain', 'thunderstorm', 'wind', 'sea_waves'] %}
+                    🌧️
+                {% elif prediction in ['car_horn', 'train', 'airplane', 'helicopter'] %}
+                    🚗
+                {% elif prediction in ['chirping_birds', 'crow', 'hen', 'rooster'] %}
+                    🐦
+                {% elif prediction in ['clock_alarm', 'clock_tick'] %}
+                    ⏰
+                {% else %}
+                    🔊
+                {% endif %}
+            </div>
+            <div class="category-info">
+                <div class="category-name">{{ prediction.replace('_', ' ').title() }}</div>
+                <div class="category-label">Detected Sound Category</div>
+            </div>
+        </div>
+        
+        <div class="waveform-container" id="waveform"></div>
+        
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <div class="time-display">
+                <span id="current-time">0:00</span>
+                <span id="total-time">0:00</span>
+            </div>
+        </div>
+        
+        <div class="audio-controls">
+            <button class="control-btn" id="playBtn" disabled>
+                <span id="playIcon">▶</span>
+                <span id="playLoading" class="loading" style="display:none;"></span>
+            </button>
+            <button class="control-btn" id="pauseBtn" disabled>❚❚</button>
+            <button class="control-btn" id="stopBtn" disabled>■</button>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="/" class="btn btn-primary">Analyze Another Sound</a>
+            <a href="#" class="btn btn-outline">Sound Details</a>
+        </div>
+    </div>
+    
+    <footer>
+        Urban Noise Classification System &copy; 2025 | Powered by Machine Learning
+    </footer>
+
+    <script>
+        // Initialize WaveSurfer
+        const wavesurfer = WaveSurfer.create({
+            container: '#waveform',
+            waveColor: '#d1d7e0',
+            progressColor: '#4361ee',
+            cursorColor: '#4361ee',
+            cursorWidth: 2,
+            barWidth: 2,
+            barRadius: 3,
+            barGap: 2,
+            height: 'auto',
+            responsive: true,
+            normalize: true,
+            partialRender: true,
+            plugins: []
+        });
+
+        // DOM elements
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const currentTime = document.getElementById('current-time');
+        const totalTime = document.getElementById('total-time');
+        const progress = document.getElementById('progress');
+        const playIcon = document.getElementById('playIcon');
+        const playLoading = document.getElementById('playLoading');
+
+        // Format time (seconds to MM:SS)
+        const formatTime = (seconds) => {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+        };
+
+        // Update time display
+        const updateTime = () => {
+            currentTime.textContent = formatTime(wavesurfer.getCurrentTime());
+            totalTime.textContent = formatTime(wavesurfer.getDuration());
+            progress.style.width = (wavesurfer.getCurrentTime() / wavesurfer.getDuration() * 100) + '%';
+        };
+
+        // Load audio file
+        const audioUrl = "{{ url_for('static', filename='uploads/' + filename) }}";
+        
+        // Show loading state
+        playIcon.style.display = 'none';
+        playLoading.style.display = 'block';
+        
+        wavesurfer.load(audioUrl);
+
+        // When audio is ready
+        wavesurfer.on('ready', () => {
+            playBtn.disabled = false;
+            pauseBtn.disabled = false;
+            stopBtn.disabled = false;
+            updateTime();
+            playLoading.style.display = 'none';
+            playIcon.style.display = 'block';
+        });
+
+        // During playback
+        wavesurfer.on('audioprocess', updateTime);
+
+        // Play button
+        playBtn.addEventListener('click', () => {
+            wavesurfer.play();
+            playBtn.disabled = true;
+            pauseBtn.disabled = false;
+        });
+
+        // Pause button
+        pauseBtn.addEventListener('click', () => {
+            wavesurfer.pause();
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+        });
+
+        // Stop button
+        stopBtn.addEventListener('click', () => {
+            wavesurfer.stop();
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+            updateTime();
+        });
+
+        // When audio finishes playing
+        wavesurfer.on('finish', () => {
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+        });
+
+        // Error handling
+        wavesurfer.on('error', (error) => {
+            console.error('WaveSurfer error:', error);
+            playLoading.style.display = 'none';
+            playIcon.style.display = 'block';
+            playBtn.disabled = true;
+            alert('Error loading audio file. Please try another file.');
+        });
+
+        // Click on waveform to seek
+        wavesurfer.on('interaction', () => {
+            wavesurfer.play();
+        });
+
+        // Progress bar click to seek
+        document.querySelector('.progress-bar').addEventListener('click', (e) => {
+            const rect = e.target.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            wavesurfer.seekTo(pos);
+            if (!wavesurfer.isPlaying()) {
+                wavesurfer.play();
+            }
+        });
+    </script>
+</body>
+</html>
